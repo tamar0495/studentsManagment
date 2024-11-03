@@ -1,0 +1,219 @@
+
+Table user{
+userId int [pk]
+firstName varchar
+lastName varchar
+addressId int
+idNumber varchar
+date dateBirth
+hebrewBirthMonthId int
+hebrewdate dateBirth
+}
+
+Table hebrewMonths{
+  hebrewMonthId int [pk]
+  hebrewMonthName varchar
+}
+
+Table student{
+studentId int [pk]
+userId int
+siblingsSum int
+welfareEligibilityStatusId int
+contactId int
+profileId int
+studiesPaymentId int
+cooperation int
+parent1Id int
+parent2Id int
+}
+
+Table parents{
+parentId int [pk]
+studentId int
+parentName varchar
+addressId int
+phoneNumber varchar
+job varchar
+familyStatusId int
+gender bit
+}
+
+Table familyStatus{
+familyStatusId int [pk]
+familyStatusName varchar
+}
+
+Table crewMember{
+crewMemberId int [pk]
+userId int
+gender bit
+tekenHours int
+roleId int
+branchId int
+contactId int
+recomendationId int
+seniority int
+salaryDegree int
+}
+
+Table welfareEligibilityStatus{
+statusId int [pk]
+statusName varchar
+date date
+}
+
+Table proffesionalTherapy{
+proffesionalTherapyId int [pk]
+studentId int
+therapistId int
+date date
+}
+
+Table therapist{
+therapistId int [pk]
+therapistName varchar
+therapistType int
+}
+
+TAble therapistTypes{
+typtId int [pk]
+typeName varchar
+}
+
+Table address{
+addressId int [pk]
+streetName varchar
+buildingNumber int
+aptNumber int
+cityId int
+}
+
+Table cities{
+cityId int [pk]
+cityName varchar
+}
+
+Table roles{
+roleId int [pk]
+roleName varchar
+}
+
+Table branches{
+branchId int [pk]
+BranchName varchar
+branchAdressId int
+}
+
+Table lessons{
+lessonId int [pk]
+lessonName varchar
+day int
+hour int
+teacher int
+classId int
+}
+
+Table lessonsForStudent{
+lessonsForStudentId int [pk]
+studentId int
+lessonId int
+isPresent bit
+}
+Table contact{
+contactId int [pk]
+userId int
+contactRelation varchar
+contactPhone varchar
+}
+
+Table recommendation{
+recommendationId int [pk]
+crewMemberId int
+recommender varchar
+recommendation varchar
+}
+
+Table studentsInChavroota{
+studentsInChavrootaId int [pk]
+studentId int
+crewMemberId int
+isPresent bit
+}
+
+Table reports{
+reportId int [pk]
+crewMemberId int
+studentId int
+report varchar
+}
+
+Table profiles{
+profileId int [pk]
+profileName varchar
+}
+
+Table eventsToAttend{
+eventId int [pk]
+eventName varchar
+}
+
+Table attendance{
+attendanceId int [pk]
+eventId int
+studentId int
+isPresent bit
+}
+
+Table tests{
+testId int [pk]
+testName varchar
+crewMember int
+date date
+minGrade int
+}
+
+Table grades{
+gradeId int [pk]
+studentId int
+testId int
+grade int
+}
+
+Table studiesPayment{
+studiesPaymentId int [pk]
+studentId int
+paymentStatusId int
+wasPaid bit
+discount bit
+}
+
+Table paymentStatuses{
+paymentStatusId int [pk]
+paymentStatusName varchar
+}
+
+Table hasPermission{
+  userId int
+}
+
+Table mivtza{
+missionId
+missionName
+scoringOptions
+startDate
+endDate
+}
+Parameters{
+paramId
+paramName
+paramScore
+bonusOptions
+bonusScore
+startDate
+endDate
+}
+paramsInMission{
+missionId
+paramId
+}
