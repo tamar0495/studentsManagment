@@ -11,7 +11,10 @@ connectDB();
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/students', require('./routes/student'));
-
+app.use('/api/crew', require('./routes/crew'));
+app.use('/api/mission', require('./routes/mission'));
+app.use('/api/test', require('./routes/test'));
+app.use('/api/validation', require('./routes/validation'));
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

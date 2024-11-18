@@ -2,20 +2,55 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { sql } = require('../config/dbConfig');
 
-// Signup logic
 exports.signup = async (req, res) => {
     const { email, password, id } = req.body;
     try {
 
-        // Insert user into the database
         const request = new sql.Request();
         await request
             .input('email', sql.VarChar, email)
             .input('password', sql.VarChar, password)
             .input('id', sql.VarChar, id)
             .query(
-                'INSERT INTO [user] ( email, password, idNumber) VALUES (@email, @password, @id)'
-            );
+                `DECLARE @existingUserId NVARCHAR(255)
+DECLARE @existingEmail NVARCHAR(255);
+DECLARE @existingPassword NVARCHAR(255);
+DECLARE @recordCount INT;
+
+SELECT @recordCount = COUNT(*)
+FROM [mevakshei].[dbo].[user]
+WHERE idNumber = @id;
+
+IF @recordCount = 0
+BEGIN
+    INSERT INTO [mevakshei].[dbo].[user] (email, [password], idNumber)
+    VALUES (@email, @password, @id);
+END
+ELSE IF @recordCount = 1
+BEGIN
+    SELECT @existingUserId = userId,
+           @existingEmail = email,
+           @existingPassword = [password]
+    FROM [mevakshei].[dbo].[user]
+    WHERE idNumber = @id;
+
+    IF @existingEmail IS NULL OR @existingPassword IS NULL
+    BEGIN
+        UPDATE [mevakshei].[dbo].[user]
+        SET email = COALESCE(email, @email),
+            [password] = COALESCE([password], @password)
+        WHERE idNumber = @id;
+    END
+    ELSE
+    BEGIN
+        SELECT 'This user already has an account' AS message;
+    END
+END
+ELSE
+BEGIN
+    SELECT 'Multiple users found with the same ID' AS message;
+END`
+        );
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
@@ -43,7 +78,15 @@ exports.login = async (req, res) => {
         const result = await request
             .input('Email', sql.VarChar, email)
             .input('Password', sql.VarChar, password)
-            .query(`SELECT * from [user] WHERE email = @email AND [password] = @password`)
+            .query(`SELECT u.*, s.studentId 
+FROM 
+    [user] u
+LEFT JOIN 
+    [student] s ON u.userId = s.userId
+WHERE 
+    u.email = @email AND 
+    u.[password] = @password;
+`)
 
         const user = result.recordset[0];
 
