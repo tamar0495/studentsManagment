@@ -61,7 +61,7 @@ exports.getStudentById = async (req, res) => {
             WHERE s.studentId = ${studentId};
         `);
 
-        res.status(200).json(result.recordset);
+        res.status(200).json(result.recordset[0]);
     } catch (err) {
         console.error('Database query error:', err);
         res.status(500).json({ error: 'Server error', message: err.message });

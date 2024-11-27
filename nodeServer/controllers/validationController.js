@@ -24,16 +24,26 @@ exports.getValidatoinForStudent = async (req, res) => {
 
 exports.getValidatoinForStudentInMission = async (req, res) => {
     const studentId = req.params.id;
-    const missionId = req.params.id;
+    const missionId = req.params.missionId;
 
     try{
         const request = new sql.Request();
         const result = await request.input('studentId', sql.Int,studentId)
         .input('missionId',sql.Int,missionId)
         .query(`SELECT 
-    v.validationId, v.studentId, v.missionId, v.paramId,
-    v.bonusDone, v.date, p.paramScore,
-    (CASE WHEN v.bonusDone = 1 THEN p.paramScore ELSE 0 END) AS scoreEarned
+    v.validationId, 
+    v.studentId, 
+    v.missionId, 
+    v.paramId,
+    p.paramName,
+    v.bonusDone, 
+    v.date, 
+    p.paramScore,
+	p.bonusScore,
+    (CASE 
+        WHEN v.bonusDone = 1 THEN p.paramScore + p.bonusScore 
+        ELSE p.paramScore 
+     END) AS scoreEarned
 FROM 
     validation v
 JOIN 
@@ -44,17 +54,8 @@ WHERE
     v.studentId = @studentId
     AND v.missionId = @missionId;
 
-SELECT 
-    SUM(CASE WHEN v.bonusDone = 1 THEN p.paramScore ELSE 0 END) AS totalScore
-FROM 
-    validation v
-JOIN 
-    paramsInMission pm ON v.missionId = pm.missionId AND v.paramId = pm.paramId
-JOIN 
-    [parameters] p ON pm.paramId = p.paramId
-WHERE 
-    v.studentId = @studentId
-    AND v.missionId = @missionId;
+
+
 `)
 res.status(200).json(result.recordset);
 

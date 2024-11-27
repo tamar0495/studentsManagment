@@ -15,6 +15,8 @@ app.use('/api/crew', require('./routes/crew'));
 app.use('/api/mission', require('./routes/mission'));
 app.use('/api/test', require('./routes/test'));
 app.use('/api/validation', require('./routes/validation'));
+app.use('/api/permission', require('./routes/permission'));
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

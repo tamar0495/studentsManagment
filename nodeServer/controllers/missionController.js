@@ -46,25 +46,28 @@ WHERE
 }
 
 exports.addMission = async (req, res) => {
+    console.log(req.body);
+    
     const {
          missionName, startDate, endDate, parameters
     }
         = req.body;
+    
     try {
-        const missionRequest = new sql.Request(transaction);
+        const missionRequest = new sql.Request();
         const missionResult = await missionRequest
-            .input(' missionName', sql.NVarChar,  missionName)
+            .input('missionName', sql.NVarChar,  missionName)
             .input('startDate', sql.Date, startDate)
             .input('endDate', sql.Date, endDate)
-            .query(`INSERT INTO [mevakshei].[dbo].[ mission] ( missionName, startDate, endDate)
+            .query(`INSERT INTO [mevakshei].[dbo].[mission] ( missionName, startDate, endDate)
                 OUTPUT INSERTED. missionId
-                VALUES (@ missionName, @startDate, @endDate);`);
+                VALUES (@missionName, @startDate, @endDate);`);
 
         const missionId = missionResult.recordset[0]. missionId;
 
         for (const param of parameters) {
             const { paramName, paramScore, bonusOptions, bonusScore, paramStartDate, paramEndDate } = param;
-            const paramRequest = new sql.Request(transaction);
+            const paramRequest = new sql.Request();
             const paramResult = await paramRequest
                 .input('paramName', sql.NVarChar, paramName)
                 .input('paramScore', sql.Int, paramScore)
@@ -84,7 +87,7 @@ exports.addMission = async (req, res) => {
                     OUTPUT INSERTED.paramId;`);
 
             const paramId = paramResult.recordset[0].paramId;
-            const linkRequest = new sql.Request(transaction);
+            const linkRequest = new sql.Request();
             await linkRequest
                 .input('missionId', sql.Int, missionId)
                 .input('paramId', sql.Int, paramId)
@@ -98,3 +101,92 @@ exports.addMission = async (req, res) => {
         res.status(500).json({ error: 'Server error', message: err.message });
     }
 }
+
+exports.getScoreForMission = async (req, res) => {
+    const { studentId, missionId } = req.params;
+    const request = new sql.Request();
+    try{
+    const result = await request.input('studentId',sql.Int, studentId)
+    .input('missionId',sql.Int, missionId)
+    .query(`SELECT 
+     v.paramId, p.paramName, p.paramScore, v.[date], v.bonusDone ,p.bonusScore
+    FROM 
+     [validation] v
+    JOIN 
+    [parameters] p ON v.paramId = p.paramId
+        WHERE 
+    v.studentId = @studentId AND v.missionId = @missionId
+        ORDER BY 
+    p.paramId, v.[date];
+        `)
+    res.json(result);
+    }catch(err){
+        console.error('Error fetching validations:', error);
+        res.status(500).send('Server Error');
+    }
+}
+
+exports.getMaxScoreForMission = async (req, res) => {
+    const missionId = req.params.missionId;
+
+    try {
+        const request = new sql.Request();
+        const result = await request.input('missionId', sql.Int, missionId)
+            .query(`
+                SELECT 
+                    p.paramId, 
+                    p.paramName, 
+                    p.paramScore, 
+                    p.bonusScore, 
+                    p.startDate, 
+                    p.endDate
+                FROM 
+                    [mevakshei].[dbo].[parameters] p
+                JOIN 
+                    [mevakshei].[dbo].[paramsInMission] pm ON p.paramId = pm.paramId
+                WHERE 
+                    pm.missionId = @missionId;
+            `);
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ message: 'No parameters found for this mission' });
+        }
+
+        let totalMaxScore = 0;
+        let totalMaxScoreWithBonus = 0;
+
+        const paramsMaxScores = result.recordset.map(param => {
+            const startDate = new Date(param.startDate);
+            const endDate = new Date(param.endDate);
+            const daysDifference = (endDate - startDate) / (1000 * 3600 * 24); // Calculate days difference
+            
+            const maxScoreForParam = daysDifference * param.paramScore; // Base score
+            const maxScoreWithBonus = maxScoreForParam + (param.bonusScore || 0); // Include bonusScore if present
+
+            totalMaxScore += maxScoreForParam;
+            totalMaxScoreWithBonus += maxScoreWithBonus;
+
+            return {
+                paramId: param.paramId,
+                paramName: param.paramName,
+                paramScore: param.paramScore,
+                startDate: param.startDate,
+                endDate: param.endDate,
+                maxScoreForParam,
+                maxScoreWithBonus
+            };
+        });
+
+        // Return the result with max scores for each parameter and the totals
+        res.status(200).json({
+            totalMaxScore,
+            totalMaxScoreWithBonus,
+            parameters: paramsMaxScores
+        });
+
+    } catch (err) {
+        console.error('Error calculating max score for mission:', err);
+        res.status(500).json({ error: 'Server error', message: err.message });
+    }
+};
+
